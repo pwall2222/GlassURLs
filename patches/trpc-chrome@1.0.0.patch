@@ -1,0 +1,14 @@
+diff --git a/adapter/index.d.ts b/adapter/index.d.ts
+index adc9fc413f9301ff60f5d35bd2d0e1340827fc3b..d945ec3baed9657b711866c5395e52940d7f1ab9 100644
+--- a/adapter/index.d.ts
++++ b/adapter/index.d.ts
+@@ -6,6 +6,7 @@ export type CreateChromeContextOptions = {
+     req: chrome.runtime.Port;
+     res: undefined;
+ };
+-export type CreateChromeHandlerOptions<TRouter extends AnyRouter> = Pick<BaseHandlerOptions<TRouter, CreateChromeContextOptions['req']> & NodeHTTPCreateContextOption<TRouter, CreateChromeContextOptions['req'], CreateChromeContextOptions['res']>, 'router' | 'createContext' | 'onError'>;
++type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
++export type CreateChromeHandlerOptions<TRouter extends AnyRouter> = Optional<Pick<BaseHandlerOptions<TRouter, CreateChromeContextOptions['req']> & NodeHTTPCreateContextOption<TRouter, CreateChromeContextOptions['req'], CreateChromeContextOptions['res']>, 'router' | 'createContext' | 'onError'>, 'createContext' | 'onError'>;
+ export declare const createChromeHandler: <TRouter extends AnyRouter>(opts: CreateChromeHandlerOptions<TRouter>) => void;
+ //# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
