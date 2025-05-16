@@ -3,9 +3,16 @@ import { createChromeHandler } from "trpc-chrome/adapter";
 import { rulesSchema } from "@/lib/zod";
 import greenGlass from "@/assets/green-glass.png";
 import redGlass from "@/assets/red-glass.png";
+import { z } from "zod";
 
 const setIcon = (enabled: boolean) => {
 	browser.browserAction.setIcon({
+		path: enabled ? greenGlass : redGlass,
+	});
+};
+const setTabIcon = (enabled: boolean, tabId: number) => {
+	browser.browserAction.setIcon({
+		tabId: tabId,
 		path: enabled ? greenGlass : redGlass,
 	});
 };
@@ -15,13 +22,36 @@ const t = initTRPC.create({
 	allowOutsideOfServer: true,
 });
 
-let state = { enabled: true };
+let state = { enabled: true, tabs: new Map() as Map<number, boolean> };
 
 const appRouter = t.router({
-	getEnabled: t.procedure.query(() => {
+	getEnabled: t.procedure.input(z.number()).query(({ input }) => {
+		if (!state.enabled) {
+			return false;
+		}
+		const tabEnabled = state.tabs.get(input);
+		if (tabEnabled === undefined) {
+			return true;
+		}
+		return tabEnabled;
+	}),
+	toggle: t.procedure.input(z.number()).mutation(({ input }) => {
+		if (!state.enabled) {
+			return false;
+		}
+		const tabEnabled = state.tabs.get(input);
+		let next = !tabEnabled;
+		if (tabEnabled === undefined) {
+			next = false;
+		}
+		state.tabs.set(input, next);
+		console.log(input);
+		setTabIcon(next, input);
+	}),
+	getEnabledGlobal: t.procedure.query(() => {
 		return state.enabled;
 	}),
-	toggle: t.procedure.mutation(() => {
+	toggleGlobal: t.procedure.mutation(() => {
 		state.enabled = !state.enabled;
 		setIcon(state.enabled);
 	}),
@@ -37,7 +67,6 @@ export default defineBackground(() => {
 		if (!data?.providers) {
 			return;
 		}
-		console.log("hiiii");
 		const providerData = Object.values(data.providers);
 
 		interface Provider {
@@ -102,9 +131,23 @@ export default defineBackground(() => {
 
 		setIcon(state.enabled);
 
+		browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+			const tabEnabled = state.tabs.get(tabId);
+			if (tabEnabled === undefined) {
+				return;
+			}
+			if (changeInfo.status !== "loading") {
+				return;
+			}
+			setTabIcon(tabEnabled, tabId);
+		});
+
 		browser.webRequest.onBeforeRequest.addListener(
 			(v) => {
 				if (!state.enabled) {
+					return;
+				}
+				if (state.tabs.get(v.tabId) === false) {
 					return;
 				}
 				const clean = cleanUrl(v.url);

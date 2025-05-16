@@ -5,7 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
 	browser: "firefox",
 	manifest: {
-		permissions: ["<all_urls>", "webRequest", "webRequestBlocking"],
+		permissions: ["<all_urls>", "webRequest", "webRequestBlocking", "tabs"],
 		action: {},
 		browser_action: {},
 	},
