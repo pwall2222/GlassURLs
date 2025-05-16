@@ -1,6 +1,14 @@
 import { initTRPC } from "@trpc/server";
 import { createChromeHandler } from "trpc-chrome/adapter";
 import { rulesSchema } from "@/lib/zod";
+import greenGlass from "@/assets/green-glass.png";
+import redGlass from "@/assets/red-glass.png";
+
+const setIcon = (enabled: boolean) => {
+	browser.browserAction.setIcon({
+		path: enabled ? greenGlass : redGlass,
+	});
+};
 
 const t = initTRPC.create({
 	isServer: false,
@@ -15,6 +23,7 @@ const appRouter = t.router({
 	}),
 	toggle: t.procedure.mutation(() => {
 		state.enabled = !state.enabled;
+		setIcon(state.enabled);
 	}),
 });
 
@@ -28,7 +37,7 @@ export default defineBackground(() => {
 		if (!data?.providers) {
 			return;
 		}
-		console.log("hi");
+		console.log("hiiii");
 		const providerData = Object.values(data.providers);
 
 		interface Provider {
@@ -90,6 +99,8 @@ export default defineBackground(() => {
 			}
 			return url.toString();
 		}
+
+		setIcon(state.enabled);
 
 		browser.webRequest.onBeforeRequest.addListener(
 			(v) => {
